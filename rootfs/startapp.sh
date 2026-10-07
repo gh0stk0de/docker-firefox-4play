@@ -26,6 +26,12 @@ done
 set -e
 
 /usr/bin/firefox --version
+#start 4play server before firefox
+cd /opt/4get/extra/4play
+NODE_ENV=production /usr/bin/nodemon /opt/4get/extra/4play/page-render.js >> /config/log/4play.log 2>&1 &
+
+sleep 3
+
 exec /usr/bin/firefox "$@" >> /config/log/firefox/output.log 2>> /config/log/firefox/error.log
 
 # vim:ft=sh:ts=4:sw=4:et:sts=4
