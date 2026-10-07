@@ -82,6 +82,7 @@ RUN \
         git \
         ca-certificates \
         nodejs-current \
+        nano \
         npm \
         && \
     # Remove unneeded icons.
