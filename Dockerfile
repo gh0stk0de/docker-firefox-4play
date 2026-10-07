@@ -131,13 +131,27 @@ RUN \
 
 # Add files.
 COPY rootfs/ /
+
+
+# Create 4play startup script.
+RUN cat > /start4play.sh <<'EOF' && \
+    chmod +x /start4play.sh
+#!/bin/sh
+cd /opt/4get/extra/4play || exit 1
+export NODE_ENV=production
+exec /usr/local/bin/nodemon /opt/4get/extra/4play/page-render.js
+EOF
+
+# Start 4play alongside Firefox.
+RUN sed -i '/^exec \/usr\/bin\/firefox "\$@" >>/i \
+(/start4play.sh >> /config/log/4play.log 2>\&1) \&\
+' /startapp.sh
+
+# continue Add files.
 COPY --from=membarrier /tmp/membarrier_check /usr/bin/
 COPY --from=nspr /tmp/nspr-install/usr/lib/libnspr4.so* /usr/lib/
 COPY --from=nspr /tmp/nspr-install/usr/lib/libplc4.so* /usr/lib/
 COPY --from=nspr /tmp/nspr-install/usr/lib/libplds4.so* /usr/lib/
-
-# Make sure the 4play service can execute.
-RUN chmod +x /etc/services.d/4play/run
 
 # Set internal environment variables.
 RUN \
