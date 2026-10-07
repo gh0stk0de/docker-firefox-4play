@@ -35,9 +35,9 @@ jobs:
 
       - name: Merge upstream
         run: |
-          git checkout main
+          git checkout master
           git merge upstream/master --no-edit
 
       - name: Push changes
         run: |
-          git push origin main
+          git push origin master
