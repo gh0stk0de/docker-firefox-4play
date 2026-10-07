@@ -1,19 +1,17 @@
 #
 # firefox Dockerfile
 #
-# https://github.com/jlesage/docker-firefox
+# forked from https://github.com/jlesage/docker-firefox
 #
 
 # Docker image version is provided via build arg.
 ARG DOCKER_IMAGE_VERSION=
 
 # Define software versions.
-ARG FIREFOX_VERSION=151.0.3-r0
-#ARG PROFILE_CLEANER_VERSION=2.36
+ARG FIREFOX_VERSION=
 ARG NSPR_VERSION=4.38.2
 
 # Define software download URLs.
-#ARG PROFILE_CLEANER_URL=https://github.com/graysky2/profile-cleaner/raw/v${PROFILE_CLEANER_VERSION}/common/profile-cleaner.in
 ARG NSPR_URL=https://ftp.mozilla.org/pub/mozilla.org/nspr/releases/v${NSPR_VERSION}/src/nspr-${NSPR_VERSION}.tar.gz
 
 # Get Dockerfile cross-compilation helpers.
@@ -27,7 +25,7 @@ RUN apk --no-cache add build-base linux-headers
 RUN gcc -static -o membarrier_check membarrier_check.c
 RUN strip membarrier_check
 
-# Rebuild NSPR with 64-bit file offsets (Alpine's package caps PR_Seek64 at 2GiB on musl).
+# Rebuild NSPR with 64-bit file offsets.
 FROM --platform=$BUILDPLATFORM alpine:3.24 AS nspr
 ARG TARGETPLATFORM
 ARG NSPR_URL
@@ -49,11 +47,15 @@ ARG DOCKER_IMAGE_VERSION
 WORKDIR /tmp
 
 # Install Firefox.
+#
+# If FIREFOX_VERSION is supplied, install that exact version.
+# Otherwise install the current version available from Alpine.
 RUN \
-#    add-pkg --repository http://dl-cdn.alpinelinux.org/alpine/edge/main \
-#            --repository http://dl-cdn.alpinelinux.org/alpine/edge/community \
-#            --upgrade firefox=${FIREFOX_VERSION}
-     add-pkg firefox=${FIREFOX_VERSION}
+    if [ -n "$FIREFOX_VERSION" ]; then \
+        add-pkg firefox="$FIREFOX_VERSION"; \
+    else \
+        add-pkg firefox; \
+    fi
 
 # Install extra packages.
 RUN \
@@ -70,21 +72,45 @@ RUN \
         libpulse \
         # Desktop notification support.
         libnotify \
-        # Icons used by folder/file selection window (when saving as).
+        # Icons used by folder/file selection window.
         adwaita-icon-theme \
         # The following package is used to send key presses to the X process.
         xdotool \
         # A font is needed.
         font-dejavu \
+        # 4play requirements.
+        git \
+        ca-certificates \
+        nodejs-current \
+        npm \
         && \
     # Remove unneeded icons.
     find /usr/share/icons/Adwaita -type d -mindepth 1 -maxdepth 1 -not -name 16x16 -not -name scalable -exec rm -rf {} ';' && \
     true
 
+# Verify Node.js and npm.
+RUN \
+    node --version && \
+    npm --version
+
+# Clone 4get.
+RUN \
+    git clone https://git.lolcat.ca/lolcat/4get.git /opt/4get
+
+# Install 4play dependencies.
+WORKDIR /opt/4get/extra/4play
+
+RUN \
+    npm install @lawlers/4play && \
+    npm install --global nodemon
+
+# Return to the normal working directory.
+WORKDIR /tmp
+
 # Install profile-cleaner.
 #RUN \
 #    add-pkg --virtual build-dependencies curl && \
-#    curl -# -L -o /usr/bin/profile-cleaner {$PROFILE_CLEANER_URL} && \
+#    curl -# -L -o /usr/bin/profile-cleaner ${PROFILE_CLEANER_URL} && \
 #    sed-patch 's/@VERSION@/'${PROFILE_CLEANER_VERSION}'/' /usr/bin/profile-cleaner && \
 #    chmod +x /usr/bin/profile-cleaner && \
 #    add-pkg \
@@ -95,7 +121,6 @@ RUN \
 #        parallel \
 #        sqlite \
 #        && \
-#    # Cleanup.
 #    del-pkg build-dependencies && \
 #    rm -rf /tmp/* /tmp/.[!.]*
 
@@ -111,9 +136,12 @@ COPY --from=nspr /tmp/nspr-install/usr/lib/libnspr4.so* /usr/lib/
 COPY --from=nspr /tmp/nspr-install/usr/lib/libplc4.so* /usr/lib/
 COPY --from=nspr /tmp/nspr-install/usr/lib/libplds4.so* /usr/lib/
 
+# Make sure the 4play service can execute.
+RUN chmod +x /etc/services.d/4play/run
+
 # Set internal environment variables.
 RUN \
-    set-cont-env APP_NAME "Firefox" && \
+    set-cont-env APP_NAME "Firefox + 4play" && \
     set-cont-env APP_VERSION "$FIREFOX_VERSION" && \
     set-cont-env DOCKER_IMAGE_VERSION "$DOCKER_IMAGE_VERSION" && \
     true
@@ -127,7 +155,7 @@ ENV \
 # Metadata.
 LABEL \
       org.label-schema.name="firefox" \
-      org.label-schema.description="Docker container for Firefox" \
+      org.label-schema.description="Docker container for Firefox + 4play" \
       org.label-schema.version="${DOCKER_IMAGE_VERSION:-unknown}" \
       org.label-schema.vcs-url="https://github.com/jlesage/docker-firefox" \
       org.label-schema.schema-version="1.0"
