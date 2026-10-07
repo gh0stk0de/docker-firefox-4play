@@ -1,7 +1,0 @@
-#!/bin/sh
-
-cd /opt/4get/extra/4play || exit 1
-
-export NODE_ENV=production
-
-exec /usr/bin/nodemon /opt/4get/extra/4play/page-render.js
