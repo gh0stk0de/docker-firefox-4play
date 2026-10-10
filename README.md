@@ -1,6 +1,8 @@
 # Docker container for Firefox with 4play + dependencies pre-installed
 [Details Here!](https://git.lolcat.ca/lolcat/4get/src/branch/master/docs/configure.md)
 
+> [!NOTE]
+> set env var FOURPLAY_SERVER_PASS=YourStrongPassword to change the default value in page-render.js from 4paly
 
 [![Release](https://img.shields.io/github/release/jlesage/docker-firefox.svg?logo=github&style=for-the-badge)](https://github.com/jlesage/docker-firefox/releases/latest)
 [![Docker Image Size](https://img.shields.io/docker/image-size/jlesage/firefox/latest?logo=docker&style=for-the-badge)](https://hub.docker.com/r/jlesage/firefox/tags)
