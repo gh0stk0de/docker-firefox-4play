@@ -98,6 +98,9 @@ RUN \
 RUN \
     git clone https://git.lolcat.ca/lolcat/4get.git /opt/4get
 
+# Allow the 4play password to be configured at runtime.
+RUN sed -i 's/var password = "cnc";/var password = process.env.FOURPLAY_SERVER_PASS || "cnc";/' /opt/4get/extra/4play/page-render.js
+
 # Install 4play dependencies.
 WORKDIR /opt/4get/extra/4play
 
