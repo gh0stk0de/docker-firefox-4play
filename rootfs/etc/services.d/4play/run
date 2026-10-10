@@ -2,8 +2,6 @@
 
 cd /opt/4get/extra/4play || exit 1
 
-sed -i "s/var password = \"cnc\";/var password = \"${FOURPLAY_SERVER_PASS:-cnc}\";/" /opt/4get/extra/4play/page-render.js #set server password
-
 export NODE_ENV=production
 
 exec nodemon /opt/4get/extra/4play/page-render.js
